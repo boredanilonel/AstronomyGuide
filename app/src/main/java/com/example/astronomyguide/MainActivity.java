@@ -1,4 +1,5 @@
 package com.example.astronomyguide;
+import android.content.Intent;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -49,10 +50,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Кнопка "Продолжить"
         Button continueBtn = findViewById(R.id.continue_btn);
+        // В методе onCreate, после настройки continueBtn:
         continueBtn.setOnClickListener(v -> {
-            // Здесь будет переход к следующему экрану (OpenGL)
-            // Для первого задания просто показываем сообщение
-            // В следующих заданиях добавим переход
+            // Переход к OpenGL активности
+            Intent intent = new Intent(MainActivity.this, OpenGLActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -115,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                         "Следующая новость через: %d сек", secondsRemaining));
 
                 if (secondsRemaining <= 0) {
-                    // Заменяем случайную новость
+                    // Заменяем случайную    новость
                     newsViewModel.replaceRandomNews();
                     secondsRemaining = 5;
                 }
