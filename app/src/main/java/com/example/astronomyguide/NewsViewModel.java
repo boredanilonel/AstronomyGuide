@@ -23,7 +23,6 @@ public class NewsViewModel extends ViewModel {
     private void initializeNews() {
         allNews = new ArrayList<>();
 
-        // Создаем 10 новостей
         allNews.add(new NewsItem("Открытие новой экзопланеты",
                 "Астрономы обнаружили планету в зоне обитаемости звезды Kepler-452"));
         allNews.add(new NewsItem("Запуск нового телескопа",
@@ -45,7 +44,6 @@ public class NewsViewModel extends ViewModel {
         allNews.add(new NewsItem("Млечный Путь",
                 "Составлена новая 3D карта нашей галактики"));
 
-        // Инициализируем первые 4 новости
         displayedIndices.clear();
         while (displayedIndices.size() < 4) {
             int index = random.nextInt(allNews.size());
@@ -79,16 +77,13 @@ public class NewsViewModel extends ViewModel {
     public void replaceRandomNews() {
         if (displayedIndices.isEmpty()) return;
 
-        // Выбираем случайную позицию для замены
         int positionToReplace = random.nextInt(displayedIndices.size());
 
-        // Находим новую новость, которой еще нет на экране
         int newNewsIndex;
         do {
             newNewsIndex = random.nextInt(allNews.size());
         } while (displayedIndices.contains(newNewsIndex));
 
-        // Заменяем
         displayedIndices.set(positionToReplace, newNewsIndex);
         updateDisplayedNews();
     }

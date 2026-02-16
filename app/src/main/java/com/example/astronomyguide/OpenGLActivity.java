@@ -17,20 +17,16 @@ public class OpenGLActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Проверяем поддержку OpenGL ES 2.0
         if (!supportsOpenGLES20()) {
             Toast.makeText(this, "Это устройство не поддерживает OpenGL ES 2.0", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
 
-        // Создаем GLSurfaceView
         glSurfaceView = new GLSurfaceView(this);
 
-        // Устанавливаем контекст OpenGL ES 2.0
         glSurfaceView.setEGLContextClientVersion(2);
 
-        // Устанавливаем рендерер
         glSurfaceView.setRenderer(new OpenGLRenderer(this));
         rendererSet = true;
 

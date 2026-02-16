@@ -32,28 +32,21 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Инициализация ViewModel
         newsViewModel = new ViewModelProvider(this).get(NewsViewModel.class);
         mainHandler = new Handler(Looper.getMainLooper());
 
-        // Инициализация UI элементов
         initializeViews();
 
-        // Настройка наблюдателей
         setupObservers();
 
-        // Настройка кнопок лайков
         setupLikeButtons();
 
-        // Запуск таймера для смены новостей
         startNewsRotation();
 
-        // Кнопка "Продолжить"
         Button continueBtn = findViewById(R.id.continue_btn);
-        // В методе onCreate, после настройки continueBtn:
+
         continueBtn.setOnClickListener(v -> {
-            // Переход к OpenGL активности
-            Intent intent = new Intent(MainActivity.this, OpenGLActivity.class);
+            Intent intent = new Intent(MainActivity.this, SolarSystemActivity.class);
             startActivity(intent);
         });
     }
@@ -61,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
     private void initializeViews() {
         timerText = findViewById(R.id.timer_text);
 
-        // Инициализация массивов для новостей
         newsTitleViews = new TextView[4];
         likeCountViews = new TextView[4];
         likeButtons = new ImageView[4];
@@ -108,8 +100,7 @@ public class MainActivity extends AppCompatActivity {
     private void startNewsRotation() {
         scheduler = Executors.newSingleThreadScheduledExecutor();
 
-        // Обновление таймера каждую секунду
-        scheduler.scheduleAtFixedRate(() -> {
+        scheduler.scheduleWithFixedDelay(() -> {
             secondsRemaining--;
 
             mainHandler.post(() -> {
@@ -117,7 +108,6 @@ public class MainActivity extends AppCompatActivity {
                         "Следующая новость через: %d сек", secondsRemaining));
 
                 if (secondsRemaining <= 0) {
-                    // Заменяем случайную    новость
                     newsViewModel.replaceRandomNews();
                     secondsRemaining = 5;
                 }
