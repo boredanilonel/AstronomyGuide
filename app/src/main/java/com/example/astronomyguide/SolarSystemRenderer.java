@@ -59,6 +59,13 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
     private List<Float> orbitSpeeds;
     private List<Float> rotationSpeeds;
 
+    // Новые поля для выбора планет
+    private TransparentCube selectionCube;
+    private int selectedPlanetIndex = 0; // 0 = Солнце, 1-8 = планеты
+    private List<Sphere> allCelestialBodies;
+    private List<String> allBodyNames;
+    private float[][] selectionCubePositions = new float[9][3];
+
     // Углы вращения
     private float sunRotation = 0;
     private float[] planetAngles = new float[8];
@@ -227,6 +234,35 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
             rotationSpeeds.add(ORBIT_SPEEDS[i] * 2.0f);
             planetAngles[i] = (float)(Math.random() * 360);
         }
+
+        // Инициализируем прозрачный куб для выделения
+        selectionCube = new TransparentCube();
+        selectionCube.setColor(0.0f, 1.0f, 1.0f, 0.3f); // Голубой полупрозрачный
+
+        // Создаем список всех небесных тел для выбора
+        allCelestialBodies = new ArrayList<>();
+        allBodyNames = new ArrayList<>();
+
+        // Добавляем Солнце
+        allCelestialBodies.add(sun);
+        allBodyNames.add("Sun");
+
+        // Добавляем планеты
+        for (Sphere planet : planets) {
+            allCelestialBodies.add(planet);
+        }
+
+        // Добавляем названия планет
+        for (int i = 1; i < PLANET_NAMES.length; i++) {
+            allBodyNames.add(PLANET_NAMES[i]);
+        }
+
+        // Инициализируем массив позиций для кубов выбора
+        for (int i = 0; i < selectionCubePositions.length; i++) {
+            selectionCubePositions[i][0] = 0; // x
+            selectionCubePositions[i][1] = 0; // y
+            selectionCubePositions[i][2] = 0; // z
+        }
     }
 
     private void initTextRenderer() {
@@ -371,14 +407,17 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
 
         // Устанавливаем позицию камеры
         Matrix.setLookAtM(viewMatrix, 0,
-                0, 4, 8,      // Позиция камеры
-                0, 0, 0,      // Точка, на которую смотрим
-                0, 1, 0);     // Направление вверх
+                0, 4, 12,      // Позиция камеры (чуть дальше для лучшего обзора)
+                0, 0, 0,       // Точка, на которую смотрим
+                0, 1, 0);      // Направление вверх
+
+        // Обновляем позиции для кубов выбора
+        updateSelectionCubePositions();
 
         // 1. Рисуем Солнце
         drawSun();
 
-        // 2. Рисуем планеты и их орбиты
+        // 2. Рисуем планеты
         drawPlanets();
 
         // 3. Рисуем кольца
@@ -387,10 +426,13 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
         // 4. Рисуем Луну
         drawMoon();
 
-        // 5. Рисуем подписи планет
+        // 5. Рисуем кубы выбора (прозрачные кубы вокруг выбранных планет)
+        drawSelectionCubes();
+
+        // 6. Рисуем подписи планет
         drawPlanetLabels();
 
-        // 6. Обновляем углы вращения
+        // 7. Обновляем углы вращения
         updateAngles();
     }
 
@@ -514,6 +556,61 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
         moon.draw(tempMatrix);
     }
 
+    private void updateSelectionCubePositions() {
+        // Позиция для Солнца (всегда в центре)
+        selectionCubePositions[0][0] = 0;
+        selectionCubePositions[0][1] = 0;
+        selectionCubePositions[0][2] = 0;
+
+        // Позиции для планет
+        for (int i = 0; i < planets.size(); i++) {
+            float angle = planetAngles[i];
+            float radius = orbitRadii.get(i);
+
+            float x = (float)(radius * Math.cos(Math.toRadians(angle)));
+            float z = (float)(radius * Math.sin(Math.toRadians(angle)));
+
+            selectionCubePositions[i + 1][0] = x;
+            selectionCubePositions[i + 1][1] = 0;
+            selectionCubePositions[i + 1][2] = z;
+        }
+    }
+
+    private void drawSelectionCubes() {
+        // Рисуем прозрачный куб вокруг выбранной планеты
+        if (selectedPlanetIndex >= 0 && selectedPlanetIndex < selectionCubePositions.length) {
+            float[] cubeMatrix = new float[16];
+            Matrix.multiplyMM(cubeMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
+
+            Matrix.setIdentityM(modelMatrix, 0);
+
+            // Позиционируем куб
+            float x = selectionCubePositions[selectedPlanetIndex][0];
+            float y = selectionCubePositions[selectedPlanetIndex][1];
+            float z = selectionCubePositions[selectedPlanetIndex][2];
+
+            Matrix.translateM(modelMatrix, 0, x, y, z);
+
+            // Вращаем куб для лучшего эффекта
+            Matrix.rotateM(modelMatrix, 0, sunRotation * 0.5f, 0.0f, 1.0f, 0.0f);
+
+            // Масштабируем куб чуть больше планеты
+            float scale;
+            if (selectedPlanetIndex == 0) {
+                scale = 1.1f; // Солнце
+            } else {
+                scale = PLANET_SIZES[selectedPlanetIndex - 1] * 2.2f;
+            }
+            Matrix.scaleM(modelMatrix, 0, scale, scale, scale);
+
+            // Объединяем матрицы
+            float[] tempMatrix = new float[16];
+            Matrix.multiplyMM(tempMatrix, 0, cubeMatrix, 0, modelMatrix, 0);
+
+            selectionCube.draw(tempMatrix);
+        }
+    }
+
     private void drawPlanetLabels() {
         // Включаем смешивание для текста
         GLES20.glEnable(GLES20.GL_BLEND);
@@ -586,9 +683,6 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
         // Масштабируем текст (делаем маленьким)
         Matrix.scaleM(modelMatrix, 0, 0.3f, 0.1f, 0.3f);
 
-        // Всегда смотрим на камеру (биллбординг)
-        // Для простоты пропускаем, но можно добавить вращение к камере
-
         // Объединяем матрицы
         float[] tempMatrix = new float[16];
         Matrix.multiplyMM(tempMatrix, 0, labelMatrix, 0, modelMatrix, 0);
@@ -632,6 +726,22 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
         // Орбита Луны вокруг Земли
         moonOrbitAngle += 5.0f;
         if (moonOrbitAngle >= 360) moonOrbitAngle -= 360;
+    }
+
+    // Методы для управления выбором планеты
+    public void selectNextPlanet() {
+        selectedPlanetIndex = (selectedPlanetIndex + 1) % allCelestialBodies.size();
+    }
+
+    public void selectPreviousPlanet() {
+        selectedPlanetIndex--;
+        if (selectedPlanetIndex < 0) {
+            selectedPlanetIndex = allCelestialBodies.size() - 1;
+        }
+    }
+
+    public String getSelectedPlanetName() {
+        return allBodyNames.get(selectedPlanetIndex);
     }
 
     public static int loadShader(int type, String shaderCode) {
