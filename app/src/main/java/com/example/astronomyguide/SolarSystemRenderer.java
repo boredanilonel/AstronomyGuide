@@ -46,7 +46,7 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
     private Ring uranusRing;
 
     // Текстуры для текста
-    private int[] planetTextures = new int[9]; // 8 планет + солнце
+    private int[] planetTextures = new int[10]; // 8 планет + солнце + луна
     private FloatBuffer textVertexBuffer;
     private FloatBuffer textTextureBuffer;
     private ShortBuffer textIndexBuffer;
@@ -61,10 +61,10 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
 
     // Новые поля для выбора планет
     private TransparentCube selectionCube;
-    private int selectedPlanetIndex = 0; // 0 = Солнце, 1-8 = планеты
+    private int selectedPlanetIndex = 0; // 0 = Солнце, 1-8 = планеты, 9 = Луна
     private List<Sphere> allCelestialBodies;
     private List<String> allBodyNames;
-    private float[][] selectionCubePositions = new float[9][3];
+    private float[][] selectionCubePositions = new float[10][3];
 
     // Углы вращения
     private float sunRotation = 0;
@@ -121,13 +121,13 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
 
     // Луна
     private static final float MOON_DISTANCE = 0.45f;
-    private static final float MOON_SIZE = 0.1f;
+    private static final float MOON_SIZE = 0.15f;
     private static final float[] MOON_COLOR = {0.8f, 0.8f, 0.8f, 1.0f};
 
     // Названия планет
     private static final String[] PLANET_NAMES = {
             "Sun", "Mercury", "Venus", "Earth", "Mars",
-            "Jupiter", "Saturn", "Uranus", "Neptune"
+            "Jupiter", "Saturn", "Uranus", "Neptune", "Moon"
     };
 
     public SolarSystemRenderer(Context context) {
@@ -214,7 +214,7 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
         uranusRing.setColor(0.6f, 0.7f, 0.8f, 0.4f); // Голубоватый, прозрачный
 
         // Создаем Луну
-        moon = new Sphere(MOON_SIZE, 12, 12);
+        moon = new Sphere(MOON_SIZE, 24, 24);
         moon.setColor(MOON_COLOR[0], MOON_COLOR[1], MOON_COLOR[2], MOON_COLOR[3]);
 
         // Добавляем планеты в список
@@ -252,16 +252,15 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
             allCelestialBodies.add(planet);
         }
 
-        // Добавляем названия планет
-        for (int i = 1; i < PLANET_NAMES.length; i++) {
-            allBodyNames.add(PLANET_NAMES[i]);
-        }
+        // Добавляем Луну
+        allCelestialBodies.add(moon);
+        allBodyNames.add("Moon");
 
         // Инициализируем массив позиций для кубов выбора
         for (int i = 0; i < selectionCubePositions.length; i++) {
-            selectionCubePositions[i][0] = 0; // x
-            selectionCubePositions[i][1] = 0; // y
-            selectionCubePositions[i][2] = 0; // z
+            selectionCubePositions[i][0] = 0;
+            selectionCubePositions[i][1] = 0;
+            selectionCubePositions[i][2] = 0;
         }
     }
 
@@ -333,13 +332,13 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
         // Настройки текста
         Paint paint = new Paint();
         paint.setColor(Color.WHITE);
-        paint.setTextSize(500);
+        paint.setTextSize(120);
         paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
         paint.setAntiAlias(true);
         paint.setTextAlign(Paint.Align.CENTER);
 
         // Рисуем текст
-        canvas.drawText(text, width / 2, height / 2 + 55, paint);
+        canvas.drawText(text, width / 2, height / 2 + 40, paint);
 
         // Загружаем текстуру
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
@@ -524,7 +523,6 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
     }
 
     private void drawMoon() {
-        // Луна вращается вокруг Земли
         float[] moonMatrix = new float[16];
         Matrix.multiplyMM(moonMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
 
@@ -574,6 +572,20 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
             selectionCubePositions[i + 1][1] = 0;
             selectionCubePositions[i + 1][2] = z;
         }
+
+        // Позиция для Луны (индекс 9)
+        float earthAngle = planetAngles[2];
+        float earthRadius = orbitRadii.get(2);
+        float earthX = (float)(earthRadius * Math.cos(Math.toRadians(earthAngle)));
+        float earthZ = (float)(earthRadius * Math.sin(Math.toRadians(earthAngle)));
+
+        float moonX = earthX + (float)(MOON_DISTANCE * Math.cos(Math.toRadians(moonOrbitAngle)));
+        float moonY = (float)(MOON_DISTANCE * Math.sin(Math.toRadians(moonOrbitAngle)));
+        float moonZ = earthZ;
+
+        selectionCubePositions[9][0] = moonX;
+        selectionCubePositions[9][1] = moonY;
+        selectionCubePositions[9][2] = moonZ;
     }
 
     private void drawSelectionCubes() {
@@ -598,6 +610,8 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
             float scale;
             if (selectedPlanetIndex == 0) {
                 scale = 1.1f; // Солнце
+            } else if (selectedPlanetIndex == 9) {
+                scale = MOON_SIZE * 2.5f; // Луна
             } else {
                 scale = PLANET_SIZES[selectedPlanetIndex - 1] * 2.2f;
             }
@@ -661,6 +675,18 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
             // Подпись немного ниже планеты
             drawLabel(i + 1, x, -0.5f, z, textColor);
         }
+
+        // Рисуем подпись для Луны
+        float earthAngle = planetAngles[2];
+        float earthRadius = orbitRadii.get(2);
+        float earthX = (float)(earthRadius * Math.cos(Math.toRadians(earthAngle)));
+        float earthZ = (float)(earthRadius * Math.sin(Math.toRadians(earthAngle)));
+
+        float moonX = earthX + (float)(MOON_DISTANCE * Math.cos(Math.toRadians(moonOrbitAngle)));
+        float moonY = (float)(MOON_DISTANCE * Math.sin(Math.toRadians(moonOrbitAngle))) - 0.3f;
+        float moonZ = earthZ;
+
+        drawLabel(9, moonX, moonY, moonZ, new float[]{0.8f, 0.8f, 0.8f, 1.0f});
 
         // Отключаем массивы
         GLES20.glDisableVertexAttribArray(positionHandle);
@@ -741,7 +767,10 @@ public class SolarSystemRenderer implements GLSurfaceView.Renderer {
     }
 
     public String getSelectedPlanetName() {
-        return allBodyNames.get(selectedPlanetIndex);
+        if (selectedPlanetIndex < allBodyNames.size()) {
+            return allBodyNames.get(selectedPlanetIndex);
+        }
+        return "Unknown";
     }
 
     public static int loadShader(int type, String shaderCode) {

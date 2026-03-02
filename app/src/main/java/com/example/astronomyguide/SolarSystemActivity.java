@@ -2,7 +2,9 @@ package com.example.astronomyguide;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ConfigurationInfo;
+import android.graphics.Typeface;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.view.View;
@@ -96,8 +98,18 @@ public class SolarSystemActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String planetName = renderer.getSelectedPlanetName();
-                Toast.makeText(SolarSystemActivity.this,
-                        "Выбрана планета: " + planetName, Toast.LENGTH_SHORT).show();
+
+                // Проверяем, выбрана ли Луна
+                if (planetName.equals("Moon") || planetName.equals("Луна")) {
+                    // Переходим к активности с Луной и освещением Фонга
+                    Intent intent = new Intent(SolarSystemActivity.this, MoonActivity.class);
+                    startActivity(intent);
+                } else {
+                    // Показываем Toast с названием планеты
+                    Toast.makeText(SolarSystemActivity.this,
+                            "Выбрана планета: " + planetName + "\nНажмите ИНФО на Луне для детального просмотра",
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
 
@@ -136,6 +148,7 @@ public class SolarSystemActivity extends AppCompatActivity {
         infoText.setText("Выбрано: Солнце");
         infoText.setTextColor(0xFFFFFFFF);
         infoText.setTextSize(18);
+        infoText.setTypeface(null, Typeface.BOLD);
         infoText.setBackgroundColor(0x80000000);
         infoText.setPadding(20, 10, 20, 10);
 

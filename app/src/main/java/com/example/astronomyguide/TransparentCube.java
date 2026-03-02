@@ -47,7 +47,6 @@ public class TransparentCube {
             0, 5, 4
     };
 
-    // Цвета вершин для прозрачного куба
     private float colors[] = {
             0.5f, 0.8f, 1.0f, 0.3f,
             0.5f, 0.8f, 1.0f, 0.3f,
@@ -78,28 +77,24 @@ public class TransparentCube {
                     "}";
 
     public TransparentCube() {
-        // Инициализация буфера вершин
         ByteBuffer bb = ByteBuffer.allocateDirect(cubeCoords.length * 4);
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
         vertexBuffer.put(cubeCoords);
         vertexBuffer.position(0);
 
-        // Инициализация буфера цветов
         ByteBuffer cb = ByteBuffer.allocateDirect(colors.length * 4);
         cb.order(ByteOrder.nativeOrder());
         colorBuffer = cb.asFloatBuffer();
         colorBuffer.put(colors);
         colorBuffer.position(0);
 
-        // Инициализация буфера индексов
         ByteBuffer ib = ByteBuffer.allocateDirect(drawOrder.length * 2);
         ib.order(ByteOrder.nativeOrder());
         indexBuffer = ib.asShortBuffer();
         indexBuffer.put(drawOrder);
         indexBuffer.position(0);
 
-        // Загрузка шейдеров
         int vertexShader = SolarSystemRenderer.loadShader(
                 GLES20.GL_VERTEX_SHADER, vertexShaderCode);
         int fragmentShader = SolarSystemRenderer.loadShader(
@@ -112,7 +107,6 @@ public class TransparentCube {
     }
 
     public void setColor(float r, float g, float b, float a) {
-        // Обновляем цвет куба
         for (int i = 0; i < 8; i++) {
             colors[i * 4] = r;
             colors[i * 4 + 1] = g;
@@ -126,11 +120,9 @@ public class TransparentCube {
     }
 
     public void draw(float[] mvpMatrix) {
-        // Включаем смешивание для прозрачности
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
-        // Используем программу
         GLES20.glUseProgram(mProgram);
 
         int positionHandle = GLES20.glGetAttribLocation(mProgram, "vPosition");
